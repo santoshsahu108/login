@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      #input {
+        height: 50px;
+        width: 1000px;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><br /><br />
+      <button>create user</button><br /><br />
+      <textarea id="input1" name="text" rows="5" cols="150"></textarea>
+    </form>
+    <form id="form1">
+      <input id="input2" autocomplete="off" /><br /><br />
+      <button>send message</button><br /><br />
+    </form>
+    <p id ="para"></p>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io();
+      var form = document.getElementById("form");
+      var form1 = document.getElementById("form1")
+      var input = document.getElementById("input");
+      var input2 = document.getElementById("input2");
+
+      async function hola(rus) {
+        let xyz = JSON.parse(rus);
+        await fetch("http://localhost:8000/createUser", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: rus,
+        })
+          .then((response) => response.json())
+          .then((res) => {
+            console.log("response for fetch_-___-----", res);
+
+            document.getElementById("input1").value = res;
+            console.log("res.deptname______--------",res.deptName)
+            
+            if (!res.deptName) {
+              alert(xyz.deptName + " department not present");
+            } else {
+              console.log("xyz__--", xyz);
+              const department = xyz
+              //socket.emit("create", xyz.deptName);
+              socket.emit('join', department , (error) => {
+              if (error) {
+              alert(error)
+              location.href = '/'
+              }
+
+              })
+              socket.on('message', (message) => {
+              console.log("wwww",message)
+              //document.getElementById("input1").innerHTML = message.message;
+              document.getElementById("para").insertAdjacentHTML("afterend", `${message.message}<br>`);
+              // document.body.innerHTML = '';
+              // document.write(message.message);
+              })
+              
+            form1.addEventListener('submit', (e) => {
+            e.preventDefault()
+            const message = input2.value
+
+            socket.emit('sendMessage', message, (error) => {
+            // $messageFormButton.removeAttribute('disabled')
+            // $messageFormInput.value = ''
+            console.log('inside send Message',message)
+
+            if (error) {
+            return console.log(error)
+            }
+
+            console.log('Message delivered!')
+             })
+             input2.value = "";
+
+            })
+            socket.on('textMessage', (message) => {
+              console.log("wwww",message)
+              //document.getElementById("input1").innerHTML = message.message;
+              document.getElementById("para").insertAdjacentHTML("afterend", `${message}<br>`);
+              // document.body.innerHTML = '';
+              // document.write(message.message);
+              })
+
+
+              //alert("user added to " + xyz.deptName + " department");
+            }
+          })
+          .catch((error) => {
+            console.log("the error is ", error);
+          });
+      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (input.value) {
+          hola(input.value);
+          input.value = "";
+        }
+      });
+
+
+    </script>
+  </body>
+</html>
